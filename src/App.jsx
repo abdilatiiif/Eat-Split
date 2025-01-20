@@ -1,4 +1,4 @@
-import PropTypes from "prop-types";
+/* eslint-disable react/prop-types */
 import React from "react";
 
 const initialFriends = [
@@ -22,10 +22,10 @@ const initialFriends = [
   },
 ];
 
-function Button(props) {
+function Button({ onClick, children }) {
   return (
-    <button onClick={props.handleShowAddFriend} className="button">
-      {props.children}
+    <button onClick={onClick} className="button">
+      {children}
     </button>
   ); // alt innhold mellom >< kommer inn
 }
@@ -33,8 +33,7 @@ function Button(props) {
 export default function App() {
   const [showAddFriend, setShowAddFriend] = React.useState(false);
   const [friends, setFriends] = React.useState(initialFriends);
-
-  console.log(friends);
+  const [selectedFriend, setSelectedFriend] = React.useState(null);
 
   function handleShowAddFriend() {
     setShowAddFriend((show) => !show);
@@ -45,37 +44,56 @@ export default function App() {
     setShowAddFriend(false);
   }
 
+  function handleSelection(friend) {
+    console.log(friend);
+    setSelectedFriend((curr) => (curr?.id === friend.id ? null : friend));
+    setShowAddFriend(false);
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
-        <FriendList friends={friends} />
+        <FriendList
+          friends={friends}
+          onSelection={handleSelection}
+          selectedFriend={selectedFriend}
+        />
+
         {showAddFriend && <FormAddFriend onAddFriend={handleAddFriend} />}
-        <Button handleShowAddFriend={handleShowAddFriend}>
+
+        <Button onClick={handleShowAddFriend}>
           {" "}
           {!showAddFriend ? "Add Friend" : "Close"}{" "}
         </Button>
       </div>
 
-      <FormSplitBill />
+      {selectedFriend && <FormSplitBill selectedFriend={selectedFriend} />}
     </div>
   );
 }
 
-function FriendList({ friends }) {
+function FriendList({ friends, onSelection, selectedFriend }) {
   // lagre midlertidig med eget lokcal initialfriends
 
   return (
     <ul>
       {friends.map((friend) => (
-        <Friend friend={friend} key={friend.id} />
+        <Friend
+          friend={friend}
+          key={friend.id}
+          selectedFriend={selectedFriend}
+          onSelection={onSelection}
+        />
       ))}
     </ul>
   );
 }
 
-function Friend({ friend }) {
+function Friend({ friend, onSelection, selectedFriend }) {
+  const isSelected = selectedFriend?.id === friend.id; // veldig viktig
+
   return (
-    <li>
+    <li className={isSelected ? "selected" : ""}>
       <img src={friend.image} alt={friend.name} />
       <h3>{friend.name}</h3>
 
@@ -91,7 +109,9 @@ function Friend({ friend }) {
       )}
       {friend.balance === 0 && <p>You and {friend.name} are even!</p>}
 
-      <Button>Select</Button>
+      <Button onClick={() => onSelection(friend)}>
+        {isSelected ? "Close" : "Select"}
+      </Button>
     </li>
   );
 }
@@ -139,10 +159,10 @@ function FormAddFriend({ onAddFriend }) {
   );
 }
 
-function FormSplitBill() {
+function FormSplitBill({ selectedFriend }) {
   return (
     <form className="form-split-bill">
-      <h2>Split a Bill with X </h2>
+      <h2>Split a Bill with {selectedFriend.name} </h2>
 
       <label htmlFor=""> 💰 Bill Value </label>
       <input type="text" />
@@ -150,44 +170,15 @@ function FormSplitBill() {
       <label htmlFor="">🧍🏾‍♂️ Your expense </label>
       <input type="text" />
 
-      <label htmlFor="">🧍🏾👭 X`s expense </label>
+      <label htmlFor="">🧍🏾👭 {selectedFriend.name}`s expense </label>
       <input type="text" disabled />
 
       <label>💵 Who is paying the bill? </label>
       <select name="" id="">
         <option value="user">You</option>
-        <option value="friend">X</option>
+        <option value="friend">{selectedFriend.name}</option>
       </select>
       <Button>Split Bill</Button>
     </form>
   );
 }
-
-FriendList.propTypes = {
-  friends: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      name: PropTypes.string.isRequired,
-      image: PropTypes.string.isRequired,
-      balance: PropTypes.number.isRequired,
-    })
-  ).isRequired,
-};
-
-Friend.propTypes = {
-  friend: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    name: PropTypes.string.isRequired,
-    image: PropTypes.string.isRequired,
-    balance: PropTypes.number.isRequired,
-  }).isRequired,
-};
-
-Button.propTypes = {
-  children: PropTypes.node.isRequired,
-  handleShowAddFriend: PropTypes.func.isRequired,
-};
-
-FormAddFriend.propTypes = {
-  onAddFriend: PropTypes.func.isRequired,
-};
