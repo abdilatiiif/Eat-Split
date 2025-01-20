@@ -22,8 +22,6 @@ const initialFriends = [
   },
 ];
 
-console.log(initialFriends);
-
 function Button(props) {
   return (
     <button onClick={props.handleShowAddFriend} className="button">
@@ -34,16 +32,24 @@ function Button(props) {
 
 export default function App() {
   const [showAddFriend, setShowAddFriend] = React.useState(false);
+  const [friends, setFriends] = React.useState(initialFriends);
+
+  console.log(friends);
 
   function handleShowAddFriend() {
     setShowAddFriend((show) => !show);
   }
 
+  function handleAddFriend(friend) {
+    setFriends((friends) => [...friends, friend]);
+    setShowAddFriend(false);
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
-        <FriendList />
-        {showAddFriend && <FormAddFriend />}
+        <FriendList friends={friends} />
+        {showAddFriend && <FormAddFriend onAddFriend={handleAddFriend} />}
         <Button handleShowAddFriend={handleShowAddFriend}>
           {" "}
           {!showAddFriend ? "Add Friend" : "Close"}{" "}
@@ -55,8 +61,8 @@ export default function App() {
   );
 }
 
-function FriendList() {
-  const friends = initialFriends; // lagre midlertidig med eget lokcal initialfriends
+function FriendList({ friends }) {
+  // lagre midlertidig med eget lokcal initialfriends
 
   return (
     <ul>
@@ -90,14 +96,43 @@ function Friend({ friend }) {
   );
 }
 
-function FormAddFriend() {
+function FormAddFriend({ onAddFriend }) {
+  const [name, setName] = React.useState("");
+  const [image, setImage] = React.useState("https://i.pravatar.cc/48?u=933372");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!name || !image) return;
+    const id = crypto.randomUUID();
+    const newFriend = {
+      name,
+      image: `${image}?=${id}`,
+      balance: 0,
+      id,
+    };
+
+    onAddFriend(newFriend);
+
+    setName("");
+    setImage("https://i.pravatar.cc/48");
+  };
+
   return (
-    <form className="form-add-friend">
+    <form className="form-add-friend" onSubmit={handleSubmit}>
       <label>👭 Friend Name</label>
-      <input type="text" />
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
       <label htmlFor="">🎇 Img URL </label>
-      <input type="text" />
+      <input
+        type="text"
+        value={image}
+        onChange={(e) => setImage(e.target.value)}
+      />
 
       <Button>Add</Button>
     </form>
@@ -128,15 +163,31 @@ function FormSplitBill() {
   );
 }
 
+FriendList.propTypes = {
+  friends: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      name: PropTypes.string.isRequired,
+      image: PropTypes.string.isRequired,
+      balance: PropTypes.number.isRequired,
+    })
+  ).isRequired,
+};
+
 Friend.propTypes = {
   friend: PropTypes.shape({
+    id: PropTypes.number.isRequired,
     name: PropTypes.string.isRequired,
-    balance: PropTypes.number.isRequired,
     image: PropTypes.string.isRequired,
+    balance: PropTypes.number.isRequired,
   }).isRequired,
 };
 
 Button.propTypes = {
   children: PropTypes.node.isRequired,
   handleShowAddFriend: PropTypes.func.isRequired,
+};
+
+FormAddFriend.propTypes = {
+  onAddFriend: PropTypes.func.isRequired,
 };
